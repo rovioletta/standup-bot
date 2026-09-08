@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS reports (
+  id SERIAL PRIMARY KEY,
+  user_id VARCHAR(32) NOT NULL,
+  team_id bigint NOT NULL,
+  report TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);

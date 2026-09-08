@@ -24,7 +24,8 @@
     "settings": {
         "event_subscriptions": {
             "bot_events": [
-                "app_mention"
+                "app_mention",
+                "message.im"
             ]
         },
         "interactivity": {
