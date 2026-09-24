@@ -10,6 +10,10 @@ import (
 	"github.com/rovioletta/standup-bot/internal/db"
 	"github.com/rovioletta/standup-bot/internal/service/reports"
 	slack_bot "github.com/rovioletta/standup-bot/internal/slack-bot"
+	"github.com/rovioletta/standup-bot/internal/slack-bot/commands"
+	"github.com/rovioletta/standup-bot/internal/slack-bot/interactions"
+	"github.com/slack-go/slack"
+	"github.com/slack-go/slack/socketmode"
 )
 
 func main() {
@@ -19,7 +23,7 @@ func main() {
 	}))
 
 	logger.Info("Starting the bot...")
-	
+
 	// Read environment variables
 	err := godotenv.Load()
 	if err != nil {
@@ -34,16 +38,10 @@ func main() {
 	queries := db.New(dbpool)
 
 	// Create Report Service
-	reportService := reports.NewService(queries)
+	reportSrv := reports.NewService(queries)
 
 	// Configure and start slack bot
-	slackBot, err := slack_bot.New(logger, reportService)
-	if err != nil {
-		logger.Error("Error: failed to create slack bot", slog.String("error", err.Error()))
-		return
-	}
-
-	slackBot.StartEventsHandler()
+	initBot(reportSrv, logger)
 }
 
 func initDB(logger *slog.Logger) *pgxpool.Pool {
@@ -67,4 +65,26 @@ func initDB(logger *slog.Logger) *pgxpool.Pool {
 	}
 
 	return dbpool
+}
+
+func initBot(reportSrv *reports.Service, logger *slog.Logger) {
+	botToken := os.Getenv("SLACK_BOT_TOKEN")
+	if botToken == "" {
+		logger.Error("SLACK_BOT_TOKEN is not provided")
+		os.Exit(1)
+	}
+
+	appToken := os.Getenv("SLACK_APP_TOKEN")
+	if appToken == "" {
+		logger.Error("SLACK_APP_TOKEN is not provided")
+	}
+
+	api := slack.New(botToken, slack.OptionAppLevelToken(appToken))
+	client := socketmode.New(api)
+
+	cmdhdl := commands.NewCommandsHandler(client, api, logger)
+	intmng := interactions.NewInteractionManager(client, api, logger, reportSrv)
+
+	slackBot := slack_bot.New(api, client, logger, cmdhdl, intmng)
+	slackBot.StartEventsHandler()
 }
