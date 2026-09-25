@@ -8,13 +8,13 @@ import (
 )
 
 /*
-	/report -- builds and posts a message containing an interactive button
+/report -- builds and posts a message containing an interactive button
 */
 func (comhdl *CommandsHandler) report(channelID string) {
 	// Create interactive button element
 	buttonBtn := slack.NewButtonBlockElement(
 		constants.ActionOpenReportButton, // Unique ID used to identify the action in EventTypeInteractive
-		"report_payload",                // Optional value passed with action
+		"report_payload",                 // Optional value passed with action
 		slack.NewTextBlockObject("plain_text", "Fill Report", false, false),
 	)
 

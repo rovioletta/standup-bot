@@ -37,5 +37,8 @@ func (comhdl *CommandsHandler) Handle(evt socketmode.Event) {
 	switch cmd.Command {
 	case "/report":
 		comhdl.report(cmd.ChannelID)
+	case "/create_my_team":
+		comhdl.createMyTeam(cmd.TriggerID)
 	}
+
 }

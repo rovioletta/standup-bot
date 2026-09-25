@@ -6,7 +6,19 @@
         "bot_user": {
             "display_name": "standup-bot",
             "always_online": false
-        }
+        },
+        "slash_commands": [
+            {
+                "command": "/report",
+                "description": "Send your report now",
+                "should_escape": false
+            },
+            {
+                "command": "/create_my_team",
+                "description": "Create your team",
+                "should_escape": false
+            }
+        ]
     },
     "oauth_config": {
         "scopes": {
@@ -16,7 +28,8 @@
                 "chat:write",
                 "im:history",
                 "im:read",
-                "im:write"
+                "im:write",
+                "commands"
             ]
         },
         "pkce_enabled": false
@@ -34,6 +47,7 @@
         "org_deploy_enabled": false,
         "socket_mode_enabled": true,
         "token_rotation_enabled": false,
+        "app_level_token_rotation_enabled": false,
         "is_mcp_enabled": false
     }
 }
