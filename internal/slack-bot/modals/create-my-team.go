@@ -1,6 +1,8 @@
 package modals
 
 import (
+	"fmt"
+
 	"github.com/rovioletta/standup-bot/internal/slack-bot/constants"
 	"github.com/slack-go/slack"
 )
@@ -45,15 +47,40 @@ func CreateMyTeamModal() slack.ModalViewRequest {
 	)
 	channelSelectBlock.Optional = true
 
-	// Construct Modal Request View
+	var options []*slack.OptionBlockObject
+	for hour := range 24 {
+		timeStr := fmt.Sprintf("%02d:00", hour)
+		
+		option := slack.NewOptionBlockObject(
+			timeStr,
+			slack.NewTextBlockObject(slack.PlainTextType, timeStr, false, false),
+			nil,
+		)
+		options = append(options, option)
+	}
+
+	timeSelectElement := slack.NewOptionsSelectBlockElement(
+		slack.OptTypeStatic,
+		slack.NewTextBlockObject(slack.PlainTextType, "Select hour...", false, false),
+		constants.ActionSelectNotificationHour,
+		options...,
+	)
+
+	timeBlock := slack.NewInputBlock(
+		constants.BlockNotificationHour,
+		slack.NewTextBlockObject(slack.PlainTextType, "Notification hour", false, false),
+		slack.NewTextBlockObject(slack.PlainTextType, "Reports are sent at the top of the hour.", false, false),
+		timeSelectElement,
+	)
+
 	return slack.ModalViewRequest{
 		Type:       slack.VTModal,
-		CallbackID: constants.CallbackDailyReportModalSubmit,
+		CallbackID: constants.CallbackCreateTeamModalSubmit,
 		Title:      slack.NewTextBlockObject("plain_text", "New Team", false, false),
 		Submit:     slack.NewTextBlockObject("plain_text", "Submit", false, false),
 		Close:      slack.NewTextBlockObject("plain_text", "Cancel", false, false),
 		Blocks: slack.Blocks{
-			BlockSet: []slack.Block{teamNameBlock, usersSelectBlock, channelSelectBlock},
+			BlockSet: []slack.Block{teamNameBlock, usersSelectBlock, channelSelectBlock, timeBlock},
 		},
 	}
 }

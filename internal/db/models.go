@@ -15,3 +15,12 @@ type Report struct {
 	Report    string
 	CreatedAt *time.Time
 }
+
+type Team struct {
+	ID               uint64
+	TeamName         string
+	ManagerID        string
+	TeamMembers      []string
+	ChannelID        string
+	NotificationHour uint16
+}

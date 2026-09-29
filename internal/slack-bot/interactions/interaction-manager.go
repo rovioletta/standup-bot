@@ -14,19 +14,31 @@ type ReportService interface {
 	SaveReport(ctx context.Context, report *domain.Report) error
 }
 
+type TeamService interface {
+	SaveTeam(ctx context.Context, teamData *domain.Team) error
+}
+
 type InteractionManager struct {
 	client  *socketmode.Client
 	api     *slack.Client
 	logger  *slog.Logger
 	reports ReportService
+	teams   TeamService
 }
 
-func NewInteractionManager(client *socketmode.Client, api *slack.Client, logger *slog.Logger, reports ReportService) *InteractionManager {
+func NewInteractionManager(
+	client *socketmode.Client,
+	api *slack.Client,
+	logger *slog.Logger,
+	reports ReportService,
+	teams TeamService,
+) *InteractionManager {
 	return &InteractionManager{
 		client:  client,
 		api:     api,
 		logger:  logger,
 		reports: reports,
+		teams:   teams,
 	}
 }
 
@@ -72,6 +84,26 @@ func (intmng *InteractionManager) Handle(evt socketmode.Event) {
 				}
 
 				intmng.api.PostMessage(userID, slack.MsgOptionText("Your report was successfully saved!", false))
+
+			}(interaction)
+
+		case constants.CallbackCreateTeamModalSubmit:
+			go func(interaction slack.InteractionCallback) {
+				err := intmng.handleCreateTeamSubmissionModal(interaction)
+
+				userID := interaction.User.ID
+
+				if err != nil {
+					intmng.logger.Error("Async team creation failed", "error", err)
+
+					msg := "Server Error. Please try later\n"
+					_, _, sendErr := intmng.api.PostMessage(userID, slack.MsgOptionText(msg, false))
+					if sendErr != nil {
+						intmng.logger.Error("Failed to send error DM to user", "error", sendErr)
+					}
+				}
+
+				intmng.api.PostMessage(userID, slack.MsgOptionText("Your team was successfully created!", false))
 
 			}(interaction)
 

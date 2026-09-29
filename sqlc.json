@@ -4,7 +4,8 @@
     {
       "engine": "postgresql",
       "schema": [
-        "migrations/01-create-reports-table.sql"
+        "migrations/01-create-reports-table.sql",
+        "migrations/02-create-teams-table.sql"
       ],
       "gen": {
         "go": {
@@ -15,6 +16,30 @@
           "emit_pointers_for_null_types": true,
           "emit_params_struct_pointers": true,
           "overrides": [
+            {
+              "db_type": "smallint",
+              "go_type": "uint16"
+            },
+            {
+              "db_type": "smallint",
+              "nullable": true,
+              "go_type": {
+                "type": "uint16",
+                "pointer": true
+              }
+            },
+            {
+              "db_type": "pg_catalog.int2",
+              "go_type": "uint16"
+            },
+            {
+              "db_type": "pg_catalog.int2",
+              "nullable": true,
+              "go_type": {
+                "type": "uint16",
+                "pointer": true
+              }
+            },
             {
               "db_type": "timestamp",
               "go_type": {

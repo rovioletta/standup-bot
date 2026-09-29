@@ -9,6 +9,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/rovioletta/standup-bot/internal/db"
 	"github.com/rovioletta/standup-bot/internal/service/reports"
+	"github.com/rovioletta/standup-bot/internal/service/teams"
 	slack_bot "github.com/rovioletta/standup-bot/internal/slack-bot"
 	"github.com/rovioletta/standup-bot/internal/slack-bot/commands"
 	"github.com/rovioletta/standup-bot/internal/slack-bot/interactions"
@@ -37,11 +38,12 @@ func main() {
 
 	queries := db.New(dbpool)
 
-	// Create Report Service
+	// Create services
 	reportSrv := reports.NewService(queries)
+	teamSrv := teams.NewService(queries)
 
 	// Configure and start slack bot
-	initBot(reportSrv, logger)
+	initBot(logger, reportSrv, teamSrv)
 }
 
 func initDB(logger *slog.Logger) *pgxpool.Pool {
@@ -67,7 +69,7 @@ func initDB(logger *slog.Logger) *pgxpool.Pool {
 	return dbpool
 }
 
-func initBot(reportSrv *reports.Service, logger *slog.Logger) {
+func initBot(logger *slog.Logger, reportSrv *reports.Service, teamSrv *teams.Service) {
 	botToken := os.Getenv("SLACK_BOT_TOKEN")
 	if botToken == "" {
 		logger.Error("SLACK_BOT_TOKEN is not provided")
@@ -83,7 +85,7 @@ func initBot(reportSrv *reports.Service, logger *slog.Logger) {
 	client := socketmode.New(api)
 
 	cmdhdl := commands.NewCommandsHandler(client, api, logger)
-	intmng := interactions.NewInteractionManager(client, api, logger, reportSrv)
+	intmng := interactions.NewInteractionManager(client, api, logger, reportSrv, teamSrv)
 
 	slackBot := slack_bot.New(api, client, logger, cmdhdl, intmng)
 	slackBot.StartEventsHandler()
