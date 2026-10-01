@@ -8,6 +8,7 @@ import (
 
 type Queries interface {
 	CreateTeam(ctx context.Context, arg *db.CreateTeamParams) (uint64, error)
+	GetMembersToNotify(ctx context.Context, notificationHour uint16) ([]string, error)
 }
 
 type Service struct {

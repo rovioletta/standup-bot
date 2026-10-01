@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
+	"github.com/rovioletta/standup-bot/internal/cron"
 	"github.com/rovioletta/standup-bot/internal/db"
 	"github.com/rovioletta/standup-bot/internal/service/reports"
 	"github.com/rovioletta/standup-bot/internal/service/teams"
@@ -79,6 +80,7 @@ func initBot(logger *slog.Logger, reportSrv *reports.Service, teamSrv *teams.Ser
 	appToken := os.Getenv("SLACK_APP_TOKEN")
 	if appToken == "" {
 		logger.Error("SLACK_APP_TOKEN is not provided")
+		os.Exit(1)
 	}
 
 	api := slack.New(botToken, slack.OptionAppLevelToken(appToken))
@@ -86,6 +88,14 @@ func initBot(logger *slog.Logger, reportSrv *reports.Service, teamSrv *teams.Ser
 
 	cmdhdl := commands.NewCommandsHandler(client, api, logger)
 	intmng := interactions.NewInteractionManager(client, api, logger, reportSrv, teamSrv)
+
+	// Run cron jobs
+	scheduler, err := cron.Run(logger, teamSrv, api)
+	if err != nil {
+		logger.Error("failed to start cron jobs", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+	defer scheduler.Shutdown()
 
 	slackBot := slack_bot.New(api, client, logger, cmdhdl, intmng)
 	slackBot.StartEventsHandler()
