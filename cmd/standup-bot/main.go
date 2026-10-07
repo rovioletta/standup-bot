@@ -7,6 +7,9 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
+	"github.com/openai/openai-go/v3"
+	"github.com/openai/openai-go/v3/option"
+	"github.com/rovioletta/standup-bot/internal/ai"
 	"github.com/rovioletta/standup-bot/internal/cron"
 	"github.com/rovioletta/standup-bot/internal/db"
 	"github.com/rovioletta/standup-bot/internal/service/reports"
@@ -39,8 +42,11 @@ func main() {
 
 	queries := db.New(dbpool)
 
+	// AI tool
+	ai := initAI(logger)
+
 	// Create services
-	reportSrv := reports.NewService(queries)
+	reportSrv := reports.NewService(queries, ai)
 	teamSrv := teams.NewService(queries)
 
 	// Configure and start slack bot
@@ -99,4 +105,19 @@ func initBot(logger *slog.Logger, reportSrv *reports.Service, teamSrv *teams.Ser
 
 	slackBot := slack_bot.New(api, client, logger, cmdhdl, intmng)
 	slackBot.StartEventsHandler()
+}
+
+func initAI(logger *slog.Logger) *ai.AI{
+	client := openai.NewClient(
+		option.WithBaseURL(os.Getenv("AI_API_URL")),
+		option.WithAPIKey(os.Getenv("AI_API_KEY")),
+	)
+
+	ai, err := ai.New(client)
+	if err != nil {
+		logger.Error("failed to create ai client", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+
+	return ai
 }
